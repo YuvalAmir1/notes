@@ -1,0 +1,6 @@
+# -*- mode: snippet -*-
+# name: a show rule
+# key: show
+# --
+#show ${1:heading}: set ${2:text}(${3:weight: "regular"})
+$0

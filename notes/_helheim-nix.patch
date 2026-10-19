@@ -1,0 +1,94 @@
+diff --git a/user-lisp/helheim/00-core/helheim-core.el b/user-lisp/helheim/00-core/helheim-core.el
+index e34940b..e9a154f 100644
+--- a/user-lisp/helheim/00-core/helheim-core.el
++++ b/user-lisp/helheim/00-core/helheim-core.el
+@@ -10,10 +10,13 @@
+ Supported values:
+ - `elpaca'
+ - `straight'
++- `nix': packages are installed outside Emacs (by Nix or Guix) and are
++  already on `load-path' when Emacs starts; Helheim installs nothing.
+ 
+ Must be set before `helheim-core' is loaded!"
+   :type '(radio (symbol :tag "elpaca"      'elpaca)
+-                (symbol :tag "straight.el" 'straight))
++                (symbol :tag "straight.el" 'straight)
++                (symbol :tag "Nix or Guix" 'nix))
+   :group 'helheim)
+ 
+ (defcustom helheim-id-format "%Y%m%dT%H%M%S"
+@@ -30,7 +33,8 @@ Must be set before `helheim-core' is loaded!"
+ 
+ (pcase helheim-package-manager
+   ('elpaca   (require 'helheim-elpaca))
+-  ('straight (require 'helheim-straight)))
++  ('straight (require 'helheim-straight))
++  ('nix      (require 'helheim-nix)))
+ (require 'dash)
+ (require 'f)
+ (require 'helheim-lib)
+@@ -53,7 +57,9 @@ Must be set before `helheim-core' is loaded!"
+ ;; We disable byte-compilation by setting `user-lisp-auto-scrape' to nil in
+ ;; early-init.el, because it runs too early, before dependencies are installed.
+ ;; This also disables autoload cookie scanning, so we perform it manually here.
+-(helheim-regenerate-autoloads)
++;; With Nix the autoloads file is generated when Helheim is built.
++(unless (eq helheim-package-manager 'nix)
++  (helheim-regenerate-autoloads))
+ 
+ ;;; External dependencies
+ 
+@@ -592,7 +598,10 @@ Use `delete-trailing-whitespace' command."
+ ;;;; Custom
+ 
+ (setup custom
+-  (:setopt custom-file (expand-file-name "custom.el" helheim-root-directory)
++  (:setopt custom-file (expand-file-name "custom.el"
++                                         (if (eq helheim-package-manager 'nix)
++                                             user-emacs-directory
++                                           helheim-root-directory))
+            custom-theme-directory (expand-file-name "themes/" helheim-root-directory)
+            custom-buffer-done-kill t)
+   (:after-init
+diff --git a/user-lisp/helheim/00-core/helheim-nix.el b/user-lisp/helheim/00-core/helheim-nix.el
+new file mode 100644
+index 0000000..bff13ce
+--- /dev/null
++++ b/user-lisp/helheim/00-core/helheim-nix.el
+@@ -0,0 +1,21 @@
++;;; helheim-nix.el                -*- lexical-binding: t; no-byte-compile: t -*-
++;;; Commentary:
++;;
++;; Packages installed outside Emacs, by Nix or Guix. They are where package.el
++;; looks already; it only has to activate them (load their autoloads), which
++;; early-init.el left for later by turning off `package-enable-at-startup'.
++;;
++;;; Code:
++
++(package-activate-all)
++
++(defalias 'elpaca-wait #'ignore)
++
++(defun helheim-update ()
++  "Explain that packages are updated outside Emacs."
++  (interactive)
++  (user-error "Packages come from Nix or Guix: update them there"))
++
++(defalias 'helheim-update-all #'helheim-update)
++
++(provide 'helheim-nix)
+diff --git a/user-lisp/helheim/00-core/helheim-setup.el b/user-lisp/helheim/00-core/helheim-setup.el
+index 25c6f45..2d54f20 100644
+--- a/user-lisp/helheim/00-core/helheim-setup.el
++++ b/user-lisp/helheim/00-core/helheim-setup.el
+@@ -358,8 +358,8 @@ Eval BODY in `after-init-hook'. If Elpaca package manager is used — eval in
+ or forms that will be wrapped in lambda in this case."
+   (declare (indent 0))
+   (let ((hook (pcase helheim-package-manager
+-                ('straight 'after-init-hook)
+-                ('elpaca   'elpaca-after-init-hook)))
++                ('elpaca 'elpaca-after-init-hook)
++                (_       'after-init-hook)))
+         (func (pcase (car body)
+                 ((pred symbolp) `#',(car body))
+                 (`(lambda . ,_) (car body))

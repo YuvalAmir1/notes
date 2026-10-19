@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# name: a block of code
+# key: code
+# --
+\`\`\`${1:python}
+$0
+\`\`\`

@@ -1,0 +1,8 @@
+# -*- mode: snippet -*-
+# name: a framed block
+# key: frame
+# --
+#block(stroke: 0.5pt + luma(50%), inset: 10pt, radius: 4pt, width: 100%)[
+  $1
+]
+$0

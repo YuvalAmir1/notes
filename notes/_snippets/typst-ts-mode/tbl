@@ -1,0 +1,10 @@
+# -*- mode: snippet -*-
+# name: a table with a header row
+# key: tbl
+# --
+#table(
+  columns: ${1:2},
+  table.header([*${2:Name}*], [*${3:Value}*]),
+  [$4], [$5],
+)
+$0

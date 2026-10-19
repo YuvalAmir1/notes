@@ -1,0 +1,9 @@
+# -*- mode: snippet -*-
+# name: a figure: a picture, its caption and label
+# key: fig
+# --
+#figure(
+  image("${1:picture.png}", width: ${2:80%}),
+  caption: [$3],
+) <${4:figure}>
+$0

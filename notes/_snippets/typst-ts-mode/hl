@@ -1,0 +1,5 @@
+# -*- mode: snippet -*-
+# name: highlighted text
+# key: hl
+# --
+#highlight[$1]$0

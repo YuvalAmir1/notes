@@ -1,0 +1,6 @@
+# -*- mode: snippet -*-
+# name: the table of contents
+# key: toc
+# --
+#outline()
+$0

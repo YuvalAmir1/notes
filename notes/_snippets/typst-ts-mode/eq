@@ -1,0 +1,6 @@
+# -*- mode: snippet -*-
+# name: an equation on its own line
+# key: eq
+# --
+\$ $1 \$
+$0

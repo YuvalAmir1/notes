@@ -1,0 +1,10 @@
+# -*- mode: snippet -*-
+# name: text in two columns
+# key: cols
+# --
+#columns(2)[
+  $1
+  #colbreak()
+  $2
+]
+$0

@@ -1,0 +1,6 @@
+# -*- mode: snippet -*-
+# name: a page break
+# key: pb
+# --
+#pagebreak()
+$0

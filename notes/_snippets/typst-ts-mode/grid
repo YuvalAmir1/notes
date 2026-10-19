@@ -1,0 +1,11 @@
+# -*- mode: snippet -*-
+# name: two things side by side
+# key: grid
+# --
+#grid(
+  columns: (1fr, 1fr),
+  gutter: 1em,
+  [$1],
+  [$2],
+)
+$0

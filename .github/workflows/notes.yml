@@ -1,0 +1,92 @@
+# On each push: build the notes for Linux and macOS to catch breakage,
+# build the Windows folder, install it on Windows and check it, then publish
+# it to the release "notes", where install.ps1 downloads it from, and run
+# the one-line install exactly as a friend would.
+name: Notes
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: DeterminateSystems/nix-installer-action@main
+      - run: nix build .#notes
+
+  macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: DeterminateSystems/nix-installer-action@main
+      - run: nix build .#notes
+
+  windows-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: DeterminateSystems/nix-installer-action@main
+      - run: |
+          nix build .#notes-windows
+          cp result/notes-windows.zip result/install.ps1 .
+      - uses: actions/upload-artifact@v7
+        with:
+          name: notes-windows
+          path: |
+            notes-windows.zip
+            install.ps1
+            notes/_windows/check.el
+
+  windows-check:
+    needs: windows-build
+    runs-on: windows-latest
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: notes-windows
+      - name: Install from this build, and check
+        shell: powershell
+        env:
+          NOTES_ZIP: ${{ github.workspace }}\notes-windows.zip
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          .\install.ps1
+          & "$env:LOCALAPPDATA\Notes\emacs\bin\emacs.exe" --batch -l notes\_windows\check.el
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+
+  publish:
+    needs: [windows-check, linux]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: notes-windows
+      - env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view notes --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1 ||
+            gh release create notes --repo "$GITHUB_REPOSITORY" --latest=false --title Notes \
+              --notes "Notes for Windows. In PowerShell: irm https://github.com/$GITHUB_REPOSITORY/releases/download/notes/install.ps1 | iex"
+          gh release upload notes notes-windows.zip install.ps1 --repo "$GITHUB_REPOSITORY" --clobber
+
+  windows-install:
+    needs: publish
+    runs-on: windows-latest
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: notes-windows
+      - name: Install as a friend would, and check
+        shell: powershell
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          irm "https://github.com/${{ github.repository }}/releases/download/notes/install.ps1" | iex
+          & "$env:LOCALAPPDATA\Notes\emacs\bin\emacs.exe" --batch -l notes\_windows\check.el
+          if ($LASTEXITCODE -ne 0) { exit 1 }

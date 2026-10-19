@@ -1,0 +1,6 @@
+# -*- mode: snippet -*-
+# name: a set rule
+# key: set
+# --
+#set ${1:par}(${2:justify: true})
+$0

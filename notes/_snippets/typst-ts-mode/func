@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# name: a function
+# key: func
+# --
+#let ${1:name}(${2:body}) = {
+  $0
+}

@@ -1,0 +1,5 @@
+# -*- mode: snippet -*-
+# name: a picture
+# key: img
+# --
+#image("${1:picture.png}", width: ${2:60%})$0

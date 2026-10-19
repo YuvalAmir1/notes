@@ -1,0 +1,8 @@
+# -*- mode: snippet -*-
+# name: a quote, with who said it
+# key: quote
+# --
+#quote(block: true, attribution: [${1:who}])[
+  $2
+]
+$0
