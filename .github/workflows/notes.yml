@@ -54,7 +54,6 @@ jobs:
         shell: powershell
         env:
           NOTES_ZIP: ${{ github.workspace }}\notes-windows.zip
-          GITHUB_TOKEN: ${{ github.token }}
         run: |
           .\install.ps1
           & "$env:LOCALAPPDATA\Notes\emacs\bin\emacs.exe" --batch -l notes\_windows\check.el
@@ -84,8 +83,6 @@ jobs:
           name: notes-windows
       - name: Install as a friend would, and check
         shell: powershell
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
         run: |
           irm "https://github.com/${{ github.repository }}/releases/download/notes/install.ps1" | iex
           & "$env:LOCALAPPDATA\Notes\emacs\bin\emacs.exe" --batch -l notes\_windows\check.el

@@ -60,28 +60,21 @@
     # The programs Emacs runs, the versions the other systems have.
     $Bin = Join-Path $Root 'bin'
     New-Item -ItemType Directory -Force -Path $Bin | Out-Null
-    $api = @{}
-    if ($env:GITHUB_TOKEN) { $api['Authorization'] = "Bearer $env:GITHUB_TOKEN" }
+    # By exact name: tinymist's release has other Windows zips too (its docs
+    # tool, viewer, typlite).
     $tools = @(
-      @{ Exe = 'typst.exe'; Repo = 'typst/typst'; Tag = 'v@typstVersion@' },
-      @{ Exe = 'tinymist.exe'; Repo = 'Myriad-Dreamin/tinymist'; Tag = 'v@tinymistVersion@' },
-      @{ Exe = 'rg.exe'; Repo = 'BurntSushi/ripgrep'; Tag = '@ripgrepVersion@' },
-      @{ Exe = 'fd.exe'; Repo = 'sharkdp/fd'; Tag = 'v@fdVersion@' }
+      @{ Exe = 'typst.exe'; Repo = 'typst/typst'; Tag = 'v@typstVersion@'; Zip = 'typst-x86_64-pc-windows-msvc.zip' },
+      @{ Exe = 'tinymist.exe'; Repo = 'Myriad-Dreamin/tinymist'; Tag = 'v@tinymistVersion@'; Zip = 'tinymist-x86_64-pc-windows-msvc.zip' },
+      @{ Exe = 'rg.exe'; Repo = 'BurntSushi/ripgrep'; Tag = '@ripgrepVersion@'; Zip = 'ripgrep-@ripgrepVersion@-x86_64-pc-windows-msvc.zip' },
+      @{ Exe = 'fd.exe'; Repo = 'sharkdp/fd'; Tag = 'v@fdVersion@'; Zip = 'fd-v@fdVersion@-x86_64-pc-windows-msvc.zip' }
     )
     foreach ($tool in $tools) {
       $stamp = Join-Path $Bin ($tool.Exe + '.version')
       if ((Get-Stamp $stamp) -eq $tool.Tag) { continue }
-      $release = Invoke-RestMethod -UseBasicParsing -Headers $api "https://api.github.com/repos/$($tool.Repo)/releases/tags/$($tool.Tag)"
-      $asset = $release.assets | Where-Object { $_.name -match 'x86_64-pc-windows-msvc\.zip$' } | Select-Object -First 1
-      if (-not $asset) {
-        $asset = $release.assets | Where-Object { $_.name -match 'win32-x64\.exe$' } | Select-Object -First 1
-      }
-      if (-not $asset) { throw "$($tool.Repo) $($tool.Tag) has no download for Windows." }
-      $file = Save-Url $asset.browser_download_url $asset.name
-      if ($file.EndsWith('.zip')) {
-        $file = (Get-ChildItem -Recurse -Filter $tool.Exe -Path (Expand-Zip $file) | Select-Object -First 1).FullName
-      }
-      Copy-Item -Force $file (Join-Path $Bin $tool.Exe)
+      $zip = Save-Url "https://github.com/$($tool.Repo)/releases/download/$($tool.Tag)/$($tool.Zip)" $tool.Zip
+      $exe = Get-ChildItem -Recurse -Filter $tool.Exe -Path (Expand-Zip $zip) | Select-Object -First 1
+      if (-not $exe) { throw "$($tool.Zip) has no $($tool.Exe)." }
+      Copy-Item -Force $exe.FullName (Join-Path $Bin $tool.Exe)
       Set-Content -Path $stamp -Value $tool.Tag
     }
 
